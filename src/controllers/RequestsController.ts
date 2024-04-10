@@ -5,39 +5,6 @@ import { getToken } from '../utils/getToken';
 import axios from 'axios';
 
 export default class RequestsController {
-  // static async register(req: Request, res: Response) {
-
-  //   const { phoneNumber, cpf, protocol, projectId } = req.body
-
-  //   if (!phoneNumber || !cpf || !protocol || !projectId) {
-  //     return res.status(StatusCodes.BAD_REQUEST).json({
-  //       message: 'Preencha todos os campos',
-  //       body: req.body
-  //     })
-  //   }
-
-  //   const registerExists = await Requests.findOne({ protocol: protocol })
-
-  //   if (registerExists) {
-  //     return res.status(StatusCodes.BAD_REQUEST).json({
-  //       message: 'Protocolo ja registrado'
-  //     })
-  //   }
-
-  //   const register = new Requests({ phoneNumber, cpf, protocol, projectId })
-
-  //   try {
-  //     await register.save()
-  //     return res.status(StatusCodes.CREATED).json({
-  //       message: 'Protocolo criado com sucesso'
-  //     })
-  //   } catch (error) {
-  //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-  //       message: error
-  //     })
-  //   }
-
-  // }
 
   static async getRequests(req: Request, res: Response) {
 
@@ -85,6 +52,24 @@ export default class RequestsController {
 
     for (const userDetail of response.data.userDetails) {
       try {
+        let userName = await RequestsController.getUserByUserId(userDetail.userId)
+
+        if (userName.message) {
+          userName = null
+        }
+
+        userDetail.userName = userName?.name
+
+        const requestExists = await Requests.findOne({ userId: userDetail.userId })
+
+        if (requestExists) {
+          await requestExists.updateOne(userDetail)
+
+          return res.status(StatusCodes.OK).json({
+            message: 'Requisição atualizada',
+          })
+        }
+
         const request = new Requests(userDetail)
 
         await request.save()
@@ -96,34 +81,39 @@ export default class RequestsController {
       }
     }
 
-    return res.status(StatusCodes.OK).json(response.data)
+    return res.status(StatusCodes.OK).json({
+      message: 'Requisição criada',
+
+    })
   }
 
-  static async getUserByUserId(req: Request, res: Response) {
+  static async getUserByUserId(userId: string) {
 
-    const { userId } = req.params
-
-    const token = await getToken()
-    const response = await axios.get(`https://api.sae1.pure.cloud/api/v2/analytics/reporting/dashboards/users/${userId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+    try {
+      if (!userId) {
+        return new Error('Nenhum ID informado')
       }
-    })
 
-    if (!response.data) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: 'Nenhum registro encontrado'
+      const token = await getToken()
+      const response = await axios.get(`https://api.sae1.pure.cloud/api/v2/analytics/reporting/dashboards/users/${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       })
-    }
 
-    if (response.data.error) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: response.data.error
-      })
-    }
+      if (!response.data) {
+        return new Error('Nenhum registro encontrado')
+      }
 
-    return res.status(StatusCodes.OK).json(response.data)
+      if (response.data.error) {
+        return new Error(response.data.error)
+      }
+
+      return response.data
+    } catch (error) {
+      return error
+    }
 
   }
 

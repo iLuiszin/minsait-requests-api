@@ -4,7 +4,9 @@ import cors from 'cors';
 import morgan from 'morgan';
 import 'dotenv/config'
 import { errorHandler } from './middlewares/error-handler';
+import cron from './cron/cron';
 
+cron.start()
 
 // Import Routes
 import RequestsRoutes from './routes/RequestsRoutes'

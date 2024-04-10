@@ -10,6 +10,7 @@ interface PrimaryPresence {
 
 // Definição do schema principal para UserDetails
 interface UserDetails {
+  userName: string | null;
   userId: string;
   primaryPresence: PrimaryPresence[];
 }
@@ -19,6 +20,7 @@ interface UserDetailsDocument extends UserDetails, Document { }
 
 // Schema para UserDetails
 const UserDetailsSchema = new Schema<UserDetailsDocument>({
+  userName: { type: String, default: null },
   userId: { type: String, required: true },
   primaryPresence: [{
     startTime: { type: Date, required: true },
