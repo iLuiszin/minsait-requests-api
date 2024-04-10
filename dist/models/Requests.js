@@ -7,6 +7,7 @@ const conn_1 = __importDefault(require("../db/conn"));
 const mongoose_1 = require("mongoose");
 // Schema para UserDetails
 const UserDetailsSchema = new mongoose_1.Schema({
+    userName: { type: String, default: null },
     userId: { type: String, required: true },
     primaryPresence: [{
             startTime: { type: Date, required: true },

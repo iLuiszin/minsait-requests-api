@@ -9,6 +9,8 @@ const cors_1 = __importDefault(require("cors"));
 const morgan_1 = __importDefault(require("morgan"));
 require("dotenv/config");
 const error_handler_1 = require("./middlewares/error-handler");
+const cron_1 = __importDefault(require("./cron/cron"));
+cron_1.default.start();
 // Import Routes
 const RequestsRoutes_1 = __importDefault(require("./routes/RequestsRoutes"));
 const app = (0, express_1.default)();

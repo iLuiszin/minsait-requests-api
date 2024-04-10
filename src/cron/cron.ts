@@ -5,6 +5,7 @@ import axios from "axios";
 import Requests from "../models/Requests";
 
 const job = new CronJob("*/1 * * * *", async () => {
+  console.log("Executando cron job");
   await saveRequests();
 });
 

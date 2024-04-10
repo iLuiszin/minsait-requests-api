@@ -17,32 +17,6 @@ const http_status_codes_1 = require("http-status-codes");
 const getToken_1 = require("../utils/getToken");
 const axios_1 = __importDefault(require("axios"));
 class RequestsController {
-    // static async register(req: Request, res: Response) {
-    //   const { phoneNumber, cpf, protocol, projectId } = req.body
-    //   if (!phoneNumber || !cpf || !protocol || !projectId) {
-    //     return res.status(StatusCodes.BAD_REQUEST).json({
-    //       message: 'Preencha todos os campos',
-    //       body: req.body
-    //     })
-    //   }
-    //   const registerExists = await Requests.findOne({ protocol: protocol })
-    //   if (registerExists) {
-    //     return res.status(StatusCodes.BAD_REQUEST).json({
-    //       message: 'Protocolo ja registrado'
-    //     })
-    //   }
-    //   const register = new Requests({ phoneNumber, cpf, protocol, projectId })
-    //   try {
-    //     await register.save()
-    //     return res.status(StatusCodes.CREATED).json({
-    //       message: 'Protocolo criado com sucesso'
-    //     })
-    //   } catch (error) {
-    //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-    //       message: error
-    //     })
-    //   }
-    // }
     static getRequests(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const token = yield (0, getToken_1.getToken)();
@@ -86,6 +60,18 @@ class RequestsController {
             }
             for (const userDetail of response.data.userDetails) {
                 try {
+                    let userName = yield RequestsController.getUserByUserId(userDetail.userId);
+                    if (userName.message) {
+                        userName = null;
+                    }
+                    userDetail.userName = userName === null || userName === void 0 ? void 0 : userName.name;
+                    const requestExists = yield Requests_1.default.findOne({ userId: userDetail.userId });
+                    if (requestExists) {
+                        yield requestExists.updateOne(userDetail);
+                        return res.status(http_status_codes_1.StatusCodes.OK).json({
+                            message: 'Requisição atualizada',
+                        });
+                    }
                     const request = new Requests_1.default(userDetail);
                     yield request.save();
                 }
@@ -96,30 +82,35 @@ class RequestsController {
                     });
                 }
             }
-            return res.status(http_status_codes_1.StatusCodes.OK).json(response.data);
+            return res.status(http_status_codes_1.StatusCodes.OK).json({
+                message: 'Requisição criada',
+            });
         });
     }
-    static getUserByUserId(req, res) {
+    static getUserByUserId(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { userId } = req.params;
-            const token = yield (0, getToken_1.getToken)();
-            const response = yield axios_1.default.get(`https://api.sae1.pure.cloud/api/v2/analytics/reporting/dashboards/users/${userId}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+            try {
+                if (!userId) {
+                    return new Error('Nenhum ID informado');
                 }
-            });
-            if (!response.data) {
-                return res.status(http_status_codes_1.StatusCodes.NOT_FOUND).json({
-                    message: 'Nenhum registro encontrado'
+                const token = yield (0, getToken_1.getToken)();
+                const response = yield axios_1.default.get(`https://api.sae1.pure.cloud/api/v2/analytics/reporting/dashboards/users/${userId}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
+                if (!response.data) {
+                    return new Error('Nenhum registro encontrado');
+                }
+                if (response.data.error) {
+                    return new Error(response.data.error);
+                }
+                return response.data;
             }
-            if (response.data.error) {
-                return res.status(http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({
-                    message: response.data.error
-                });
+            catch (error) {
+                return error;
             }
-            return res.status(http_status_codes_1.StatusCodes.OK).json(response.data);
         });
     }
     static getAllRequests(req, res) {
