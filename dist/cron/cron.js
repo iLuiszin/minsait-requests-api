@@ -17,7 +17,8 @@ const RequestsController_1 = __importDefault(require("../controllers/RequestsCon
 const getToken_1 = require("../utils/getToken");
 const axios_1 = __importDefault(require("axios"));
 const Requests_1 = __importDefault(require("../models/Requests"));
-const job = new cron_1.CronJob("*/1 * * * *", () => __awaiter(void 0, void 0, void 0, function* () {
+const job = new cron_1.CronJob("*/30 * * * *", () => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("Executando cron job");
     yield saveRequests();
 }));
 function saveRequests() {
